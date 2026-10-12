@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Email Auto-Responder Dashboard</title>
+<link rel="stylesheet" href="indexCSS.css">
+</head>
+<body>
+<header>
+  <div class="wrap">
+    <div class="top">
+      <div class="logo" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/></svg></div>
+      <div class="title"><h1>Email Auto-Responder</h1><small>UiPath bot · Help Desk inbox</small></div>
+      <div class="spacer"></div>
+      <span id="botPill" class="pill"><span class="dot"></span><span id="botState">Waiting for data</span></span>
+      <span class="meta" id="lastUpd">—</span>
+      <button class="iconbtn" id="themeBtn" title="Switch light / dark" aria-label="Switch light / dark"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" style="display:block"><circle cx="12" cy="12" r="9"/><path d="M12 3a9 9 0 0 0 0 18z" fill="currentColor"/></svg></button>
+    </div>
+    <nav class="tabs" role="tablist">
+      <button role="tab" data-v="live" aria-selected="true">Live</button>
+      <button role="tab" data-v="emails">Emails<span class="count" id="cEmails"></span></button>
+      <button role="tab" data-v="sent">Sent mail<span class="count" id="cSent"></span></button>
+      <button role="tab" data-v="excel">Excel files<span class="count" id="cExcel"></span></button>
+      <button role="tab" data-v="history">Bot history<span class="count" id="cRuns"></span></button>
+      <button role="tab" data-v="rules">Rules</button>
+      <button role="tab" data-v="settings">Settings</button>
+    </nav>
+  </div>
+</header>
+
+<main class="wrap">
+  <div id="noData" class="note warn" hidden>
+    <b>No bot data found yet.</b> This page reads <code>dashboard/data/bot-data.js</code>, which the bot writes while it runs.
+    Run <code>Main.xaml</code> in UiPath Studio and this page will fill in on its own.
+  </div>
+
+  <!-- LIVE -->
+  <section class="view on" id="v-live">
+    <div class="grid kpis" id="kpis"></div>
+    <div class="grid two">
+      <div class="card">
+        <div class="hd">Current run <span class="spacer"></span><span id="runTag" class="b ghost"></span></div>
+        <div class="bd" id="runBox"></div>
+      </div>
+      <div class="card">
+        <div class="hd">Live activity <span class="spacer"></span><span class="meta" id="feedNote"></span></div>
+        <ul class="feed" id="feed"></ul>
+      </div>
+    </div>
+    <div class="card" style="margin-top:14px">
+      <div class="hd">Every Email Auto-Responder feature <span class="spacer" style="flex:1"></span><span class="meta" id="featNote"></span></div>
+      <div class="tablewrap"><table class="feat">
+        <thead><tr><th></th><th>Feature</th><th>Where it happens in UiPath</th><th>This run</th><th>All time</th></tr></thead>
+        <tbody id="featRows"></tbody>
+      </table></div>
+    </div>
+  </section>
+
+  <!-- EMAILS -->
+  <section class="view" id="v-emails">
+    <div class="card">
+      <div class="toolbar">
+        <input type="search" id="q" placeholder="Search sender, subject, keyword, reply…">
+        <select id="fStatus"><option value="">All outcomes</option></select>
+        <select id="fDept"><option value="">All departments</option></select>
+        <select id="fSent"><option value="">All sentiments</option></select>
+        <select id="fFlag"><option value="">Any flag</option><option value="urgent">Urgent only</option><option value="spam">Spam only</option></select>
+        <select id="fRun"><option value="">All runs</option></select>
+        <button class="btn" id="csvBtn" title="Download the filtered list as CSV">Export CSV</button>
+      </div>
+      <div class="tablewrap"><table>
+        <thead><tr><th>Received</th><th>Ticket</th><th>From</th><th>Subject</th><th>Outcome</th><th>Department</th><th>Sentiment</th><th>Urgent</th><th>Spam</th></tr></thead>
+        <tbody id="mailRows"></tbody>
+      </table></div>
+      <div class="foot"><span id="mailCount"></span><span class="muted">Click a row to see the full email, AI analysis, reply and every step the bot took.</span></div>
+    </div>
+  </section>
+
+  <!-- SENT -->
+  <section class="view" id="v-sent">
+    <div class="card">
+      <div class="toolbar">
+        <input type="search" id="qs" placeholder="Search recipient, subject, body…">
+        <select id="fType"><option value="">All types</option></select>
+      </div>
+      <ul class="sent" id="sentList"></ul>
+      <div class="foot"><span id="sentCount"></span><span class="muted">Every email the bot sent from your Gmail account: replies, forwards and run summaries.</span></div>
+    </div>
+  </section>
+
+  <!-- HISTORY -->
+  <section class="view" id="v-excel">
+    <div class="card">
+      <div class="toolbar">
+        <div class="books" id="xBooks"></div>
+        <input type="search" id="qx" placeholder="Search this sheet…">
+        <select id="xRows"><option value="all">All rows</option><option value="run">Rows added in the last run</option><option value="full">Complete rows only</option></select>
+        <a class="btn" id="xOpen" href="#" title="Opens the real Excel file">Open in Excel</a>
+        <button class="btn" id="xCsv">Download CSV</button>
+      </div>
+      <div class="xlwrap"><table class="xl" id="xlTable"></table></div>
+      <div class="xltabs" id="xSheets"></div>
+      <div class="foot"><span id="xInfo"></span><span class="muted" id="xHint"></span></div>
+    </div>
+  </section>
+
+  <section class="view" id="v-history">
+    <div class="card">
+      <div class="toolbar">
+        <select id="hRange"><option value="all">All time</option><option value="1">Today</option><option value="7">Last 7 days</option><option value="30">Last 30 days</option></select>
+        <label class="meta"><input type="checkbox" id="hImported"> Include rows imported from the Excel audit</label>
+        <span class="spacer" style="flex:1"></span>
+        <button class="btn" id="importBtn" title="Load audit table.xlsx rows into this view">Import Excel audit…</button>
+        <input type="file" id="importFile" accept=".xlsx,.xls" hidden>
+      </div>
+      <div class="tablewrap"><table>
+        <thead><tr><th>Run</th><th>Started</th><th>Duration</th><th>Status</th><th>Processed</th><th>Replied</th><th>Urgent</th><th>Spam</th><th>Other outcomes</th></tr></thead>
+        <tbody id="runRows"></tbody>
+      </table></div>
+      <div class="foot"><span id="runCount"></span><span class="muted">Click a run to open its emails.</span></div>
+    </div>
+  </section>
+
+  <!-- RULES -->
+  <section class="view" id="v-rules">
+    <p class="note">These are the rules the bot read from <code>KeywordsResponses.xlsx</code> the last time it ran (<span id="rulesAt">—</span>). Edit the Excel file to change them; the bot reloads it for every email.</p>
+    <div class="grid rules" id="rulesGrid"></div>
+  </section>
+
+  <!-- SETTINGS -->
+  <section class="view" id="v-settings">
+    <div class="card"><h2>Dashboard settings</h2><div class="bd">
+      <div class="set">
+        <div><div class="h">Auto-refresh</div><div class="d">How often the page re-reads the bot's data file.</div></div>
+        <select id="sRefresh"><option value="2">Every 2 seconds</option><option value="5">Every 5 seconds</option><option value="10">Every 10 seconds</option><option value="30">Every 30 seconds</option><option value="0">Off (press R to refresh)</option></select>
+        <div><div class="h">Theme</div><div class="d">Follow Windows, or force light or dark.</div></div>
+        <select id="sTheme"><option value="system">System</option><option value="light">Light</option><option value="dark">Dark</option></select>
+        <div><div class="h">History range</div><div class="d">Default time range for Emails, Sent mail and Bot history.</div></div>
+        <select id="sRange"><option value="all">All time</option><option value="1">Today</option><option value="7">Last 7 days</option><option value="30">Last 30 days</option></select>
+        <div><div class="h">Excel-imported history</div><div class="d">Show the rows that came from <code>audit\audit table.xlsx</code> (before the dashboard existed).</div></div>
+        <select id="sImported"><option value="1">Show</option><option value="0">Hide</option></select>
+        <div><div class="h">Live feed length</div><div class="d">Number of activity lines shown on the Live tab.</div></div>
+        <select id="sFeed"><option value="50">50</option><option value="100">100</option><option value="300">300</option></select>
+        <div><div class="h">Imported Excel files</div><div class="d">Rows you loaded with “Import Excel audit…” are kept in this browser only.</div></div>
+        <div><button class="btn" id="clearImport">Forget imported rows</button> <span class="meta" id="impInfo"></span></div>
+      </div>
+    </div></div>
+    <div class="card" style="margin-top:14px"><h2>Where the data comes from</h2><div class="bd">
+      <dl class="kv">
+        <dt>Data file</dt><dd><code>dashboard\data\bot-data.json</code> (full history) and <code>bot-data.js</code> (same data for this page). Written by <code>UpdateDashboard.xaml</code>.</dd>
+        <dt>Excel log</dt><dd><code>audit\audit table.xlsx</code> is still written at the end of every run, exactly as before, and is shown in full on the <b>Excel files</b> tab, together with <code>KeywordsResponses.xlsx</code>.</dd>
+        <dt>Open on start</dt><dd>Main.xaml variable <code>openDashboardOnStart</code> (default <code>True</code>) opens this page when the bot starts.</dd>
+        <dt>Reset history</dt><dd>Close the page, delete the two files in <code>dashboard\data</code>, and run the bot again.</dd>
+        <dt>Records</dt><dd id="dataStats">—</dd>
+      </dl>
+    </div></div>
+  </section>
+</main>
+
+<div class="scrim" id="scrim"></div>
+<aside class="drawer" id="drawer" aria-hidden="true">
+  <div class="dh"><div style="flex:1;min-width:0"><div class="meta" id="dMeta"></div><h3 id="dTitle"></h3><div class="tags" id="dTags"></div></div><button class="iconbtn" id="dClose" title="Close (Esc)">✕</button></div>
+  <div class="db" id="dBody"></div>
+</aside>
+
+<script src="indexScript.js"></script>
+</body>
+</html>
